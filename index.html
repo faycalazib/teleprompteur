@@ -62,7 +62,7 @@ body:not(.playing) #show{display:none}
 .row button.main{background:var(--cue);color:var(--ink);font-weight:700;border-color:var(--cue)}
 @media (prefers-reduced-motion:reduce){#top,#bar{transition:none}}
 /* Caméra : vidéo frontale en fond, texte posé tout en haut, au plus près de l'objectif. */
-#cam{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);z-index:0;background:#000}
+#cam{position:fixed;inset:0;width:100%;height:100%;object-fit:contain;transform:scaleX(-1);z-index:0;background:#000}
 #stage{z-index:1}
 body.cam{background:#000}
 body.cam .fade-top,body.cam .fade-bot{display:none}
@@ -311,12 +311,18 @@ body:not(.cam) #rec{display:none}
   function camOn(){
     if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){camFail();return;}
     navigator.mediaDevices.getUserMedia({
-      video:{facingMode:"user",width:{ideal:1080},height:{ideal:1920},frameRate:{ideal:30}},
+      video:{facingMode:"user",width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30},resizeMode:"none"},
       audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
     }).then(function(s){
-      camStream=s;var v=$("cam");v.srcObject=s;v.hidden=false;v.play().catch(function(){});
+      camStream=s;dezoom(s);var v=$("cam");v.srcObject=s;v.hidden=false;v.play().catch(function(){});
       body.classList.add("cam");$("camBtn").textContent="📷 Couper";layout();
     }).catch(function(){camFail();});
+  }
+  /* Remet le zoom au minimum (vue la plus large) quand le téléphone le permet. */
+  function dezoom(s){
+    try{var tr=s.getVideoTracks()[0];var caps=tr.getCapabilities?tr.getCapabilities():{};
+      if(caps.zoom&&typeof caps.zoom.min==="number"){tr.applyConstraints({advanced:[{zoom:caps.zoom.min}]}).catch(function(){});}
+    }catch(e){}
   }
   function camOff(){
     if(rec&&rec.state!=="inactive")return;
